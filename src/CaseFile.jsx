@@ -148,6 +148,13 @@ function generatePuzzle(seed, rowCount = 7) {
       if (filterPerms(AP, trial, freebieRow, freebieItem).length === 1) { active.splice(i,1); changed=true; }
     }
   }
+  // Pad to minimum 5 — pull true-but-redundant clues from pool if needed
+  if (active.length < 5) {
+    for (const clue of pool) {
+      if (active.length >= 5) break;
+      if (!active.some((a) => a.text === clue.text)) active.push(clue);
+    }
+  }
   return { seed, rowCount:n, rows, theme:theme.label, singular:theme.singular, items:chosen, solution:sol, freebieRow, clues:seededShuffle(active,rng).map((c)=>c.text) };
 }
 
