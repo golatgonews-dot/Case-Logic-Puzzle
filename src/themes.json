@@ -1,0 +1,167 @@
+[
+  {
+    "label": "US States",
+    "singular": "state",
+    "items": ["New York","Texas","Arizona","Hawaii","Washington","Iowa","Wisconsin","California","Oregon","Nevada","Colorado","Montana","Georgia","Florida","Ohio","Maine","Utah","Vermont","Kansas","Alabama"]
+  },
+  {
+    "label": "World Capitals",
+    "singular": "capital",
+    "items": ["Paris","Tokyo","Cairo","Nairobi","Lima","Oslo","Seoul","Hanoi","Manila","Quito","Accra","Doha","Bern","Riga","Minsk","Tirana","Amman","Lisbon","Vienna","Dublin"]
+  },
+  {
+    "label": "NBA Teams",
+    "singular": "team",
+    "items": ["Lakers","Celtics","Warriors","Nets","Bulls","Heat","Knicks","Suns","Mavericks","Nuggets","Bucks","Spurs","Raptors","Clippers","Grizzlies","Hawks","Magic","Jazz","Kings","Pistons"]
+  },
+  {
+    "label": "Chemical Elements",
+    "singular": "element",
+    "items": ["Hydrogen","Helium","Lithium","Carbon","Nitrogen","Oxygen","Neon","Sodium","Aluminum","Silicon","Sulfur","Argon","Calcium","Iron","Copper","Zinc","Silver","Gold","Tin","Lead"]
+  },
+  {
+    "label": "Greek Letters",
+    "singular": "letter",
+    "items": ["Alpha","Beta","Gamma","Delta","Epsilon","Zeta","Theta","Iota","Kappa","Lambda","Mu","Nu","Xi","Omicron","Pi","Rho","Sigma","Tau","Phi","Omega"]
+  },
+  {
+    "label": "Solar System Bodies",
+    "singular": "body",
+    "items": ["Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Pluto","Ceres","Eris","Haumea","Makemake"]
+  },
+  {
+    "label": "World Rivers",
+    "singular": "river",
+    "items": ["Amazon","Nile","Mississippi","Yangtze","Congo","Danube","Rhine","Thames","Ganges","Mekong","Niger","Volga","Zambezi","Colorado","Hudson","Seine","Jordan","Tigris","Euphrates","Indus"]
+  },
+  {
+    "label": "MLB Teams",
+    "singular": "team",
+    "items": ["Yankees","Red Sox","Cubs","Dodgers","Giants","Cardinals","Braves","Mets","Astros","Athletics","Phillies","Tigers","Mariners","Padres","Rangers","Brewers","Royals","Nationals","Twins","Pirates"]
+  },
+  {
+    "label": "Classic Cocktails",
+    "singular": "cocktail",
+    "items": ["Martini","Negroni","Old Fashioned","Manhattan","Margarita","Mojito","Daiquiri","Cosmopolitan","Whiskey Sour","Gimlet","Sidecar","Boulevardier","Paloma","Tom Collins","Sazerac","Moscow Mule","Dark and Stormy","Bellini","Aperol Spritz","Clover Club"]
+  },
+  {
+    "label": "Wine Varieties",
+    "singular": "wine",
+    "items": ["Cabernet Sauvignon","Pinot Noir","Chardonnay","Merlot","Sauvignon Blanc","Riesling","Syrah","Zinfandel","Pinot Grigio","Malbec","Tempranillo","Grenache","Viognier","Chenin Blanc","Sangiovese","Barbera","Nebbiolo","Moscato","Gewürztraminer","Rosé"]
+  },
+  {
+    "label": "Animal Taxonomies",
+    "singular": "class",
+    "items": ["Mammalia","Aves","Reptilia","Amphibia","Actinopterygii","Chondrichthyes","Insecta","Arachnida","Crustacea","Cephalopoda","Gastropoda","Bivalvia","Echinodermata","Annelida","Cnidaria","Porifera","Myriapoda","Coleoptera","Diptera","Lepidoptera"]
+  },
+  {
+    "label": "Flowers",
+    "singular": "flower",
+    "items": ["Rose","Tulip","Orchid","Sunflower","Dahlia","Lily","Peony","Lavender","Chrysanthemum","Iris","Hydrangea","Magnolia","Poppy","Jasmine","Marigold","Carnation","Daffodil","Hibiscus","Wisteria","Camellia"]
+  },
+  {
+    "label": "Precious Gems",
+    "singular": "gem",
+    "items": ["Diamond","Ruby","Emerald","Sapphire","Amethyst","Opal","Pearl","Topaz","Aquamarine","Garnet","Turquoise","Peridot","Alexandrite","Tanzanite","Spinel","Jade","Moonstone","Tourmaline","Citrine","Morganite"]
+  },
+  {
+    "label": "Mountain Ranges",
+    "singular": "range",
+    "items": ["Himalayas","Alps","Andes","Rockies","Appalachians","Urals","Atlas","Caucasus","Carpathians","Pyrenees","Sierra Nevada","Cascades","Hindu Kush","Karakoram","Dolomites","Adirondacks","Blue Ridge","Ozarks","Zagros","Teton"]
+  },
+  {
+    "label": "80s TV Shows",
+    "singular": "show",
+    "items": ["Cheers","Dallas","Dynasty","Miami Vice","The A-Team","Knight Rider","Magnum P.I.","Family Ties","Growing Pains","Golden Girls","Murder She Wrote","MacGyver","Moonlighting","Hill Street Blues","St. Elsewhere","Falcon Crest","Knots Landing","Remington Steele","Simon & Simon","Scarecrow and Mrs. King"]
+  },
+  {
+    "label": "Spices",
+    "singular": "spice",
+    "items": ["Cinnamon","Cumin","Turmeric","Paprika","Cardamom","Cloves","Nutmeg","Coriander","Saffron","Cayenne","Ginger","Fenugreek","Allspice","Star Anise","Sumac","Caraway","Fennel","Mace","Tamarind","Za'atar"]
+  },
+  {
+    "label": "Trees",
+    "singular": "tree",
+    "items": ["Oak","Maple","Pine","Birch","Cedar","Willow","Redwood","Mahogany","Teak","Cypress","Elm","Ash","Spruce","Walnut","Cherry","Baobab","Eucalyptus","Sequoia","Sycamore","Acacia"]
+  },
+  {
+    "label": "California Cities",
+    "singular": "city",
+    "items": ["Los Angeles","San Francisco","San Diego","Sacramento","San Jose","Oakland","Fresno","Long Beach","Bakersfield","Anaheim","Santa Ana","Riverside","Stockton","Irvine","Chula Vista","Fremont","Santa Barbara","Pasadena","Modesto","Monterey"]
+  },
+  {
+    "label": "US Presidents",
+    "singular": "president",
+    "items": ["Washington","Jefferson","Lincoln","Roosevelt","Eisenhower","Kennedy","Nixon","Carter","Reagan","Clinton","Bush","Obama","Trump","Biden","Adams","Madison","Monroe","Jackson","Polk","Truman"]
+  },
+  {
+    "label": "Shakespeare Plays",
+    "singular": "play",
+    "items": ["Hamlet","Othello","Macbeth","Romeo and Juliet","King Lear","The Tempest","A Midsummer Night's Dream","Twelfth Night","Much Ado About Nothing","Richard III","Julius Caesar","Merchant of Venice","Antony and Cleopatra","Measure for Measure","The Winter's Tale","Henry V","Coriolanus","As You Like It","Cymbeline","Titus Andronicus"]
+  },
+  {
+    "label": "Car Brands",
+    "singular": "brand",
+    "items": ["Ferrari","Porsche","Lamborghini","Bentley","Rolls-Royce","Aston Martin","McLaren","Bugatti","Maserati","Alfa Romeo","Jaguar","Tesla","BMW","Mercedes","Audi","Volvo","Subaru","Dodge","Cadillac","Lincoln"]
+  },
+  {
+    "label": "US National Parks",
+    "singular": "park",
+    "items": ["Yellowstone","Yosemite","Grand Canyon","Zion","Acadia","Olympic","Glacier","Rocky Mountain","Joshua Tree","Shenandoah","Everglades","Arches","Bryce Canyon","Canyonlands","Sequoia","Crater Lake","Death Valley","Mammoth Cave","Denali","Great Smoky Mountains"]
+  },
+  {
+    "label": "Classic Rock Bands",
+    "singular": "band",
+    "items": ["Led Zeppelin","The Rolling Stones","Pink Floyd","The Who","Aerosmith","Fleetwood Mac","Eagles","Lynyrd Skynyrd","Cream","Deep Purple","Jethro Tull","The Kinks","Creedence Clearwater Revival","Jefferson Airplane","The Doors","Santana","Boston","Heart","Foreigner","Bad Company"]
+  },
+  {
+    "label": "Pasta Types",
+    "singular": "pasta",
+    "items": ["Spaghetti","Rigatoni","Penne","Fusilli","Farfalle","Linguine","Tagliatelle","Orecchiette","Conchiglie","Lasagna","Gnocchi","Ravioli","Tortellini","Bucatini","Pappardelle","Cavatappi","Gemelli","Paccheri","Strozzapreti","Maltagliati"]
+  },
+  {
+    "label": "Famous Painters",
+    "singular": "painter",
+    "items": ["Da Vinci","Michelangelo","Rembrandt","Vermeer","Monet","Manet","Renoir","Cézanne","Van Gogh","Gauguin","Picasso","Matisse","Klimt","Kandinsky","Dali","Mondrian","Pollock","Rothko","Warhol","Basquiat"]
+  },
+  {
+    "label": "African Countries",
+    "singular": "country",
+    "items": ["Nigeria","Ethiopia","Egypt","Kenya","Ghana","Tanzania","South Africa","Morocco","Senegal","Rwanda","Zimbabwe","Mozambique","Madagascar","Cameroon","Uganda","Ivory Coast","Angola","Mali","Zambia","Botswana"]
+  },
+  {
+    "label": "Cheeses",
+    "singular": "cheese",
+    "items": ["Brie","Camembert","Roquefort","Gruyère","Emmental","Gouda","Edam","Manchego","Pecorino","Parmigiano","Gorgonzola","Taleggio","Fontina","Havarti","Comté","Époisses","Limburger","Raclette","Stilton","Mimolette"]
+  },
+  {
+    "label": "Olympic Sports",
+    "singular": "sport",
+    "items": ["Fencing","Archery","Equestrian","Weightlifting","Wrestling","Judo","Taekwondo","Rowing","Shooting","Triathlon","Modern Pentathlon","Water Polo","Handball","Field Hockey","Badminton","Table Tennis","Bobsled","Skeleton","Luge","Biathlon"]
+  },
+  {
+    "label": "Coffee Drinks",
+    "singular": "drink",
+    "items": ["Espresso","Americano","Latte","Cappuccino","Macchiato","Cortado","Flat White","Lungo","Ristretto","Mocha","Affogato","Cold Brew","Nitro","Vienna","Galão","Café au Lait","Irish Coffee","Frappuccino","Iced Latte","Doppio"]
+  },
+  {
+    "label": "Ancient Civilizations",
+    "singular": "civilization",
+    "items": ["Mesopotamia","Ancient Egypt","Ancient Greece","Roman Empire","Persian Empire","Carthage","Phoenicia","Minoan","Mycenaean","Indus Valley","Shang Dynasty","Olmec","Maya","Aztec","Inca","Byzantine","Ottoman","Mongol","Viking","Khmer"]
+  },
+  {
+    "label": "Architectural Styles",
+    "singular": "style",
+    "items": ["Gothic","Baroque","Romanesque","Renaissance","Neoclassical","Art Nouveau","Art Deco","Brutalism","Modernism","Postmodernism","Bauhaus","Deconstructivism","Beaux-Arts","Prairie Style","International Style","Expressionism","Metabolism","High-Tech","Parametricism","Vernacular"]
+  },
+  {
+    "label": "Legendary Athletes",
+    "singular": "athlete",
+    "items": ["Ali","Pelé","Curry","Gauff","Crosby","Nadal","Williams","Bolt","Phelps","Osaka","Ohtani","Valenzuela","Owens","Gibson","Thorpe","Robinson","Messi","Fuhr","Felix","O'Ree"]
+  },
+  {
+    "label": "Card Games",
+    "singular": "game",
+    "items": ["Poker","Bridge","Blackjack","Rummy","Canasta","Pinochle","Cribbage","Euchre","Spades","Hearts","Gin Rummy","Crazy Eights","War","Old Maid","Go Fish","Snap","Slapjack","Piquet","Baccarat","Solitaire"]
+  }
+]
