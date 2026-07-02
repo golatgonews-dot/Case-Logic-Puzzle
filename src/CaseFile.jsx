@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import THEMES from "./themes.json";
 
 /* ---------------------------------------------------------
@@ -53,8 +53,8 @@ const EPOCH = new Date("2026-01-01T00:00:00Z");
 const todayStr     = () => new Date().toISOString().slice(0, 10);
 const yesterdayStr = () => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); };
 const dailyCaseNumber = (ds) => Math.max(1, Math.floor((new Date(ds + "T00:00:00Z") - EPOCH) / 86400000) + 1);
-const fmtTime = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
-const seedToCode  = (seed) => seed.toString(36).toUpperCase().padStart(6, "0");
+const fmtTime    = (sec)  => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, "0")}`;
+const seedToCode = (seed) => seed.toString(36).toUpperCase().padStart(6, "0");
 
 /* ---------------------------------------------------------
    PERMUTATION + SOLVER
@@ -72,11 +72,13 @@ const posOf = (perm, item) => perm.indexOf(item);
 const permCache = {};
 const allPermsFor = (n) => { if (!permCache[n]) permCache[n] = permutations([...Array(n).keys()]); return permCache[n]; };
 
-function buildCluePool(sol, names, rows) {
+function buildCluePool(sol, names, rows, freebieItem) {
   const n = rows.length, pool = [];
   const push = (text, check) => pool.push({ text, check });
   for (let r = 0; r < n; r++) {
     const i = sol[r], nm = names[i];
+    // FIX: skip clues where the SUBJECT is the freebie — player already knows its location
+    if (i === freebieItem) continue;
     push(`${nm} is in the ${rows[r].name} row.`, (p) => posOf(p, i) === r);
     if (r > 0)   { const j = sol[r-1]; push(`${nm} is directly below ${names[j]}.`,  (p) => posOf(p,i) === posOf(p,j)+1); }
     if (r < n-1) { const j = sol[r+1]; push(`${nm} is directly above ${names[j]}.`,  (p) => posOf(p,i) === posOf(p,j)-1); }
@@ -119,12 +121,13 @@ function generatePuzzle(seed, rowCount = 7) {
   const rows = ROWS_FULL.slice(0, rowCount);
   const n    = rowCount;
   const AP   = allPermsFor(n);
-  const theme      = THEMES[Math.floor(rng() * THEMES.length)];
-  const chosen     = seededShuffle(theme.items, rng).slice(0, n);
-  const sol        = seededShuffle([...Array(n).keys()], rng);
-  const freebieRow = Math.floor(rng() * n);
+  const theme       = THEMES[Math.floor(rng() * THEMES.length)];
+  const chosen      = seededShuffle(theme.items, rng).slice(0, n);
+  const sol         = seededShuffle([...Array(n).keys()], rng);
+  const freebieRow  = Math.floor(rng() * n);
   const freebieItem = sol[freebieRow];
-  const pool = seededShuffle(buildCluePool(sol, chosen, rows), rng);
+  // Pass freebieItem so buildCluePool skips it as a subject
+  const pool = seededShuffle(buildCluePool(sol, chosen, rows, freebieItem), rng);
   let remaining = filterPerms(AP, [], freebieRow, freebieItem);
   const active = [];
   for (const clue of pool) {
@@ -148,7 +151,7 @@ function generatePuzzle(seed, rowCount = 7) {
       if (filterPerms(AP, trial, freebieRow, freebieItem).length === 1) { active.splice(i,1); changed=true; }
     }
   }
-  // Pad to minimum 5 — pull true-but-redundant clues from pool if needed
+  // Pad to minimum 5 with redundant-but-true clues
   if (active.length < 5) {
     for (const clue of pool) {
       if (active.length >= 5) break;
@@ -161,7 +164,7 @@ function generatePuzzle(seed, rowCount = 7) {
 /* ---------------------------------------------------------
    LOCAL STORAGE
 --------------------------------------------------------- */
-const LS_STATE = "lineup_state_v1";
+const LS_STATE = "lineup_state_v2"; // bumped version — clears stale saved state
 const LS_STATS = "lineup_stats_v1";
 function loadJSON(key, fallback) {
   try { const r = localStorage.getItem(key); return r ? JSON.parse(r) : fallback; } catch { return fallback; }
@@ -206,32 +209,52 @@ export default function CaseFile() {
   const [won,       setWon]       = useState(!!initial.won);
   const [elapsed,   setElapsed]   = useState(initial.won ? (initial.finishedAt - initial.startedAt - (initial.pauseOffset||0)) / 1000 : 0);
   const [copied,    setCopied]    = useState(false);
-  const [dateKey]                 = useState(initial.dateKey || todayStr());
-  const [caseNum]                 = useState(() => initial.mode === "daily" ? dailyCaseNumber(initial.dateKey || todayStr()) : null);
+  // dateKey and caseNum are derived live — never frozen at mount, never null
+  const [dateKey, setDateKey]     = useState(todayStr);
+  const caseNum = mode === "daily" ? dailyCaseNumber(dateKey) : null;
 
-  // Refs for timer — avoid stale closures and re-renders
   const startedAt   = useRef(initial.startedAt || Date.now());
-  const pauseOffset = useRef(initial.pauseOffset || 0);  // accumulated ms hidden
-  const hiddenAt    = useRef(null);                       // when tab was hidden
+  const pauseOffset = useRef(initial.pauseOffset || 0);
+  const hiddenAt    = useRef(null);
 
-  /* ---- TIMER with Page Visibility pause ---- */
+  /* ---- load a puzzle imperatively ---- */
+  const loadPuzzle = useCallback((seed, rc, newMode, newDateKey) => {
+    const p = generatePuzzle(seed, rc);
+    const arr = Array(rc).fill(null);
+    arr[p.freebieRow] = p.solution[p.freebieRow];
+    setPuzzle(p); setPlacements(arr); setStruck(new Set());
+    setSelected(null); setWrongRows(new Set()); setWon(false); setElapsed(0);
+    startedAt.current   = Date.now();
+    pauseOffset.current = 0;
+    hiddenAt.current    = null;
+    setMode(newMode);
+    if (newDateKey) setDateKey(newDateKey);
+  }, []);
+
+  /* ---- TIMER + date-change detection on focus/visibility ---- */
   useEffect(() => {
-    if (won) return;
-
-    const onVisibility = () => {
-      if (document.hidden) {
-        // tab going away — note the time
-        hiddenAt.current = Date.now();
-      } else {
-        // tab coming back — add gap to offset
-        if (hiddenAt.current !== null) {
-          pauseOffset.current += Date.now() - hiddenAt.current;
-          hiddenAt.current = null;
-        }
+    const onShow = () => {
+      // Resume timer
+      if (hiddenAt.current !== null) {
+        pauseOffset.current += Date.now() - hiddenAt.current;
+        hiddenAt.current = null;
+      }
+      // Date changed while app was backgrounded — load fresh daily
+      const today = todayStr();
+      if (mode === "daily" && today !== dateKey) {
+        const seed = hashSeed("daily-" + today);
+        stats.current.totalPlayed += 1; saveJSON(LS_STATS, stats.current);
+        loadPuzzle(seed, 7, "daily", today);
       }
     };
 
+    const onHide = () => { hiddenAt.current = Date.now(); };
+
+    const onVisibility = () => { document.hidden ? onHide() : onShow(); };
+
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onShow);
+    window.addEventListener("blur",  onHide);
 
     const tick = setInterval(() => {
       if (!document.hidden) {
@@ -242,8 +265,10 @@ export default function CaseFile() {
     return () => {
       clearInterval(tick);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onShow);
+      window.removeEventListener("blur",  onHide);
     };
-  }, [won]);
+  }, [won, mode, dateKey, loadPuzzle]);
 
   /* ---- Persist board state ---- */
   useEffect(() => {
@@ -259,7 +284,7 @@ export default function CaseFile() {
       finishedAt:  won ? startedAt.current + elapsed * 1000 + pauseOffset.current : null
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [placements, struck, won, mode, puzzle.seed, rowCount]);
+  }, [placements, struck, won, mode, puzzle.seed, rowCount, dateKey]);
 
   /* ---- Puzzle helpers ---- */
   const trayItems = useMemo(() => {
@@ -269,21 +294,9 @@ export default function CaseFile() {
 
   const allFilled = placements.every((p) => p !== null);
 
-  const loadPuzzle = (seed, rc, newMode) => {
-    const p = generatePuzzle(seed, rc);
-    const arr = Array(rc).fill(null);
-    arr[p.freebieRow] = p.solution[p.freebieRow];
-    setPuzzle(p); setPlacements(arr); setStruck(new Set());
-    setSelected(null); setWrongRows(new Set()); setWon(false); setElapsed(0);
-    startedAt.current   = Date.now();
-    pauseOffset.current = 0;
-    hiddenAt.current    = null;
-    setMode(newMode);
-  };
-
-  const newPracticeCase = () => loadPuzzle(Math.floor(Math.random() * 2**31), rowCount, "practice");
-  const switchRowCount  = (rc) => { setRowCount(rc); loadPuzzle(Math.floor(Math.random() * 2**31), rc, "practice"); };
-  const goToDaily       = () => loadPuzzle(hashSeed("daily-" + dateKey), 7, "daily");
+  const newPracticeCase = () => loadPuzzle(Math.floor(Math.random() * 2**31), rowCount, "practice", null);
+  const switchRowCount  = (rc) => { setRowCount(rc); loadPuzzle(Math.floor(Math.random() * 2**31), rc, "practice", null); };
+  const goToDaily       = () => { const today = todayStr(); loadPuzzle(hashSeed("daily-" + today), 7, "daily", today); };
 
   const tapTray = (idx) => { if (won) return; setSelected((s) => s === idx ? null : idx); };
   const tapRow  = (r) => {
@@ -417,38 +430,38 @@ export default function CaseFile() {
    STYLES
 --------------------------------------------------------- */
 const S = {
-  page:         { minHeight:"100vh", background:"#121110", backgroundImage:"repeating-linear-gradient(0deg,rgba(255,255,255,0.015) 0px,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 3px)", display:"flex", justifyContent:"center", padding:"28px 14px", fontFamily:"Georgia,'Times New Roman',serif", color:"#23201a" },
-  folder:       { position:"relative", width:"100%", maxWidth:480, background:"#d9cba1", borderRadius:6, padding:"26px 20px 30px", boxShadow:"0 18px 40px rgba(0,0,0,0.5)", border:"1px solid #b8a877" },
-  tape:         { position:"absolute", top:-10, left:"50%", transform:"translateX(-50%) rotate(-2deg)", width:110, height:24, background:"rgba(244,233,199,0.55)", border:"1px solid rgba(0,0,0,0.05)" },
-  modeTabs:     { display:"flex", gap:6, marginBottom:14 },
-  tab:          { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, fontWeight:700, letterSpacing:1, background:"transparent", color:"#8a5a2a", border:"1px solid #b8a877", borderRadius:4, padding:"6px 10px", cursor:"pointer" },
-  tabActive:    { background:"#1c1a16", color:"#d9cba1", borderColor:"#1c1a16" },
-  headerRow:    { display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 },
-  eyebrow:      { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, letterSpacing:1.5, color:"#8a5a2a", fontWeight:700 },
-  title:        { fontFamily:"'Arial Black',Impact,Haettenschweiler,sans-serif", fontSize:30, letterSpacing:1, margin:"2px 0 2px", color:"#1c1a16" },
-  subject:      { fontSize:13, fontStyle:"italic", color:"#5a4f3a" },
-  newBtn:       { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:12, fontWeight:700, background:"#1c1a16", color:"#d9cba1", border:"none", borderRadius:4, padding:"8px 10px", cursor:"pointer", whiteSpace:"nowrap" },
-  statRow:      { display:"flex", gap:14, fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, color:"#5a4f3a", margin:"10px 0 2px", fontWeight:700 },
-  rowCountRow:  { display:"flex", gap:6, marginTop:10 },
-  rcBtn:        { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, fontWeight:700, background:"transparent", color:"#8a5a2a", border:"1px solid #b8a877", borderRadius:4, padding:"5px 9px", cursor:"pointer" },
-  rcBtnActive:  { background:"#b3392c", color:"#f1e8cf", borderColor:"#b3392c" },
-  instructions: { fontSize:13, lineHeight:1.45, color:"#4a4030", margin:"12px 0 16px" },
-  grid:         { display:"flex", flexDirection:"column", gap:6, marginBottom:14 },
-  rowSlot:      { display:"flex", alignItems:"center", gap:10, border:"1.5px solid #3a342a", borderRadius:5, padding:"10px 12px", background:"#26221c", position:"relative", transition:"background 0.15s,border-color 0.15s" },
-  swatch:       { width:16, height:16, borderRadius:3, flexShrink:0, border:"1px solid rgba(255,255,255,0.25)" },
-  rowLabel:     { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, color:"#9a8f78", width:70, flexShrink:0 },
-  rowDivider:   { width:1, height:18, background:"#3a342a" },
-  rowValue:     { fontSize:15, fontWeight:700, color:"#f1e8cf", flex:1 },
-  givenTag:     { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:9, fontWeight:700, color:"#c4267a", border:"1px solid #c4267a", borderRadius:3, padding:"2px 5px" },
-  tray:         { display:"flex", flexWrap:"wrap", gap:8, marginBottom:18 },
-  chip:         { fontFamily:"Georgia,serif", fontSize:13, fontWeight:700, background:"#f1e8cf", border:"1px solid #b8a877", borderRadius:4, padding:"8px 12px", cursor:"pointer", color:"#1c1a16" },
-  chipSelected: { background:"#c4267a", color:"#fff", borderColor:"#c4267a" },
+  page:           { minHeight:"100vh", background:"#121110", backgroundImage:"repeating-linear-gradient(0deg,rgba(255,255,255,0.015) 0px,rgba(255,255,255,0.015) 1px,transparent 1px,transparent 3px)", display:"flex", justifyContent:"center", padding:"28px 14px", fontFamily:"Georgia,'Times New Roman',serif", color:"#23201a" },
+  folder:         { position:"relative", width:"100%", maxWidth:480, background:"#d9cba1", borderRadius:6, padding:"26px 20px 30px", boxShadow:"0 18px 40px rgba(0,0,0,0.5)", border:"1px solid #b8a877" },
+  tape:           { position:"absolute", top:-10, left:"50%", transform:"translateX(-50%) rotate(-2deg)", width:110, height:24, background:"rgba(244,233,199,0.55)", border:"1px solid rgba(0,0,0,0.05)" },
+  modeTabs:       { display:"flex", gap:6, marginBottom:14 },
+  tab:            { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, fontWeight:700, letterSpacing:1, background:"transparent", color:"#8a5a2a", border:"1px solid #b8a877", borderRadius:4, padding:"6px 10px", cursor:"pointer" },
+  tabActive:      { background:"#1c1a16", color:"#d9cba1", borderColor:"#1c1a16" },
+  headerRow:      { display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:10 },
+  eyebrow:        { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, letterSpacing:1.5, color:"#8a5a2a", fontWeight:700 },
+  title:          { fontFamily:"'Arial Black',Impact,Haettenschweiler,sans-serif", fontSize:30, letterSpacing:1, margin:"2px 0 2px", color:"#1c1a16" },
+  subject:        { fontSize:13, fontStyle:"italic", color:"#5a4f3a" },
+  newBtn:         { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:12, fontWeight:700, background:"#1c1a16", color:"#d9cba1", border:"none", borderRadius:4, padding:"8px 10px", cursor:"pointer", whiteSpace:"nowrap" },
+  statRow:        { display:"flex", gap:14, fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, color:"#5a4f3a", margin:"10px 0 2px", fontWeight:700 },
+  rowCountRow:    { display:"flex", gap:6, marginTop:10 },
+  rcBtn:          { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, fontWeight:700, background:"transparent", color:"#8a5a2a", border:"1px solid #b8a877", borderRadius:4, padding:"5px 9px", cursor:"pointer" },
+  rcBtnActive:    { background:"#b3392c", color:"#f1e8cf", borderColor:"#b3392c" },
+  instructions:   { fontSize:13, lineHeight:1.45, color:"#4a4030", margin:"12px 0 16px" },
+  grid:           { display:"flex", flexDirection:"column", gap:6, marginBottom:14 },
+  rowSlot:        { display:"flex", alignItems:"center", gap:10, border:"1.5px solid #3a342a", borderRadius:5, padding:"10px 12px", background:"#26221c", position:"relative", transition:"background 0.15s,border-color 0.15s" },
+  swatch:         { width:16, height:16, borderRadius:3, flexShrink:0, border:"1px solid rgba(255,255,255,0.25)" },
+  rowLabel:       { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:11, color:"#9a8f78", width:70, flexShrink:0 },
+  rowDivider:     { width:1, height:18, background:"#3a342a" },
+  rowValue:       { fontSize:15, fontWeight:700, color:"#f1e8cf", flex:1 },
+  givenTag:       { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:9, fontWeight:700, color:"#c4267a", border:"1px solid #c4267a", borderRadius:3, padding:"2px 5px" },
+  tray:           { display:"flex", flexWrap:"wrap", gap:8, marginBottom:18 },
+  chip:           { fontFamily:"Georgia,serif", fontSize:13, fontWeight:700, background:"#f1e8cf", border:"1px solid #b8a877", borderRadius:4, padding:"8px 12px", cursor:"pointer", color:"#1c1a16" },
+  chipSelected:   { background:"#c4267a", color:"#fff", borderColor:"#c4267a" },
   evidenceHeader: { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:12, fontWeight:700, letterSpacing:2, color:"#8a5a2a", borderTop:"1px dashed #b8a877", paddingTop:14, marginBottom:6 },
-  clueList:     { margin:"0 0 18px", paddingLeft:20, display:"flex", flexDirection:"column", gap:7 },
-  clueItem:     { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:13, lineHeight:1.4, color:"#2c2718", cursor:"pointer" },
-  checkBtn:     { width:"100%", fontFamily:"'Arial Black',Impact,sans-serif", fontSize:14, letterSpacing:1, background:"#b3392c", color:"#f1e8cf", border:"none", borderRadius:5, padding:"13px 0", fontWeight:700 },
-  wrongNote:    { marginTop:10, fontSize:12, color:"#b3392c", fontFamily:"ui-monospace,monospace", textAlign:"center" },
-  stampWrap:    { display:"flex", flexDirection:"column", alignItems:"center", gap:12, marginTop:18 },
-  stamp:        { fontFamily:"'Arial Black',Impact,Haettenschweiler,sans-serif", fontSize:26, letterSpacing:2, color:"#b3392c", border:"4px solid #b3392c", borderRadius:8, padding:"8px 18px", transform:"rotate(-6deg)", opacity:0.9 },
-  shareBtn:     { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:12, fontWeight:700, background:"#1c1a16", color:"#d9cba1", border:"none", borderRadius:4, padding:"10px 16px", cursor:"pointer" }
+  clueList:       { margin:"0 0 18px", paddingLeft:20, display:"flex", flexDirection:"column", gap:7 },
+  clueItem:       { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:13, lineHeight:1.4, color:"#2c2718", cursor:"pointer" },
+  checkBtn:       { width:"100%", fontFamily:"'Arial Black',Impact,sans-serif", fontSize:14, letterSpacing:1, background:"#b3392c", color:"#f1e8cf", border:"none", borderRadius:5, padding:"13px 0", fontWeight:700 },
+  wrongNote:      { marginTop:10, fontSize:12, color:"#b3392c", fontFamily:"ui-monospace,monospace", textAlign:"center" },
+  stampWrap:      { display:"flex", flexDirection:"column", alignItems:"center", gap:12, marginTop:18 },
+  stamp:          { fontFamily:"'Arial Black',Impact,Haettenschweiler,sans-serif", fontSize:26, letterSpacing:2, color:"#b3392c", border:"4px solid #b3392c", borderRadius:8, padding:"8px 18px", transform:"rotate(-6deg)", opacity:0.9 },
+  shareBtn:       { fontFamily:"ui-monospace,'Courier New',monospace", fontSize:12, fontWeight:700, background:"#1c1a16", color:"#d9cba1", border:"none", borderRadius:4, padding:"10px 16px", cursor:"pointer" }
 };
